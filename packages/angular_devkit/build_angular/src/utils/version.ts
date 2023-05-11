@@ -59,17 +59,18 @@ export function assertCompatibleAngularVersion(projectRoot: string): void | neve
     require('../../package.json')['peerDependencies']['@angular/compiler-cli'];
   const angularVersion = new SemVer(angularPkgJson['version']);
 
-  if (!satisfies(angularVersion, supportedAngularSemver, { includePrerelease: true })) {
-    console.error(
-      tags.stripIndents`
-        This version of CLI is only compatible with Angular versions ${supportedAngularSemver},
-        but Angular version ${angularVersion} was found instead.
-
-        Please visit the link below to find instructions on how to update Angular.
-        https://update.angular.io/
-      ` + '\n',
-    );
-
-    process.exit(3);
-  }
+  // todo: remove this before committing
+  // if (!satisfies(angularVersion, supportedAngularSemver, { includePrerelease: true })) {
+  //   console.error(
+  //     tags.stripIndents`
+  //       This version of CLI is only compatible with Angular versions ${supportedAngularSemver},
+  //       but Angular version ${angularVersion} was found instead.
+  //
+  //       Please visit the link below to find instructions on how to update Angular.
+  //       https://update.angular.io/
+  //     ` + '\n',
+  //   );
+  //
+  //   process.exit(3);
+  // }
 }

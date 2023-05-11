@@ -24,6 +24,11 @@ ts_json_schema(
 )
 
 ts_json_schema(
+    name = "browser_rspack_schema",
+    src = "src/builders/browser-rspack/schema.json",
+)
+
+ts_json_schema(
     name = "browser_esbuild_schema",
     src = "src/builders/browser-esbuild/schema.json",
 )
@@ -81,6 +86,7 @@ ts_library(
     ) + [
         "//packages/angular_devkit/build_angular:src/builders/app-shell/schema.ts",
         "//packages/angular_devkit/build_angular:src/builders/browser-esbuild/schema.ts",
+        "//packages/angular_devkit/build_angular:src/builders/browser-rspack/schema.ts",
         "//packages/angular_devkit/build_angular:src/builders/browser/schema.ts",
         "//packages/angular_devkit/build_angular:src/builders/dev-server/schema.ts",
         "//packages/angular_devkit/build_angular:src/builders/extract-i18n/schema.ts",

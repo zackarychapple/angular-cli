@@ -68,7 +68,8 @@
     "webpack-dev-middleware": "6.1.0",
     "webpack-dev-server": "4.13.3",
     "webpack-merge": "5.8.0",
-    "webpack-subresource-integrity": "5.1.0"
+    "webpack-subresource-integrity": "5.1.0",
+    "@rspack/cli": "^0.1.10"
   },
   "optionalDependencies": {
     "esbuild": "0.17.18"
