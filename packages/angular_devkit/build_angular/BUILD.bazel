@@ -132,6 +132,8 @@ ts_library(
         "@npm//@babel/runtime",
         "@npm//@babel/template",
         "@npm//@discoveryjs/json-ext",
+        "@npm//@rspack/cli",
+        "@npm//@rspack/core",
         "@npm//@types/babel__core",
         "@npm//@types/babel__template",
         "@npm//@types/browserslist",
@@ -358,6 +360,13 @@ LARGE_SPECS = {
         "shards": 10,
         "extra_deps": [
             "@npm//buffer",
+        ],
+    },
+    "browser-rspack": {
+        "shards": 10,
+        "extra_deps": [
+            "@npm//@rspack/cli",
+            "@npm//@rspack/core",
         ],
     },
     "jest": {

@@ -1,20 +1,324 @@
-function webpackFactory(options) {
-  const compiler = await cli.createCompiler(rspackOptions, 'build', errorHandler);
+import path from 'node:path';
+import { RspackCLI } from '@rspack/cli';
+import { DevTool, Mode, rspack, RspackOptions } from '@rspack/core';
+import { from, Observable } from 'rxjs';
+import { NamedChunksPlugin } from '../../webpack/plugins/named-chunks-plugin';
+import { OccurrencesPlugin } from '../../webpack/plugins/occurrences-plugin';
+import { AngularWebpackPlugin } from '@ngtools/webpack';
+import webpack from 'webpack';
+import { Target } from '@rspack/core/dist/config/types';
+import { definitions } from '@rspack/core/dist/config/schema';
+import cacheGroups = definitions.OptimizationSplitChunksOptions.properties_13.cacheGroups;
 
-  if (cli.isWatch(compiler)) {
-    return;
-  } else {
-    compiler.run(errorHandler);
-  }
+export function webpackFactory(options: any) {
+  return from(createWebpackFactoryFromRspackCLI(options)) as unknown as Observable<typeof webpack>;
 }
 
-/* webpack part
-function webpackFactory(options) {
+async function createWebpackFactoryFromRspackCLI(options: any) {
+  const rspackCommand = 'build';
+  process.env.RSPACK_CONFIG_VALIDATE = 'loose';
+  let nodeEnv = process?.env?.NODE_ENV;
+  let rspackCommandDefaultEnv = rspackCommand === 'build' ? 'production' : 'development';
+  if (typeof options.nodeEnv === 'string') {
+    process.env.NODE_ENV = nodeEnv || options.nodeEnv;
+  } else {
+    process.env.NODE_ENV = nodeEnv || rspackCommandDefaultEnv;
+  }
+  // let config = await this.loadConfig(options);
+  const cli = new RspackCLI();
+  const cliOptions = {
+    'watch': false,
+    'devtool': false,
+    'analyze': false,
+    'env': {},
+    'argv': {},
+  };
+  const config = await cli.buildConfig(webpackToRspack(options), cliOptions, rspackCommand);
+
+  return rspack(config);
+}
+
+function webpackToRspack(options: webpack.Configuration): RspackOptions {
+  const {
+    mode,
+    devtool,
+    target,
+    profile,
+    resolve,
+    output,
+    watch,
+    experiments,
+    optimization,
+    module,
+    plugins,
+  } = options;
+
+  const convertResolve = (resolve: webpack.ResolveOptions = {}) => {
+    const { extensions } = resolve;
+    return {
+      extensions: extensions,
+    };
+  };
+
+  const convertOutput = (output: any) => {
+    const {
+      uniqueName,
+      hashFunction,
+      clean,
+      path,
+      publicPath,
+      filename,
+      chunkFilename,
+      crossOriginLoading,
+      trustedTypes,
+      scriptType,
+    } = output;
+    return {
+      uniqueName,
+      clean,
+      publicPath,
+      filename,
+      chunkFilename,
+      crossOriginLoading,
+      trustedTypes,
+    };
+  };
+
+  const convertExperiments = (experiments: any) => {
+    const { asyncWebAssembly } = experiments;
+    return { asyncWebAssembly };
+  };
+
+  const convertOptimization = (optimization: any) => {
+    const { minimize, runtimeChunk, splitChunks } = optimization;
+
+    const common = splitChunks['common'];
+    delete common.enforce;
+
+    return {
+      minimize,
+      runtimeChunk,
+      splitChunks: {
+        maxAsyncRequests: splitChunks?.maxAsyncRequests,
+        cacheGroups: {
+          default: splitChunks['default'],
+          common,
+        },
+      },
+    };
+  };
+
+  const convertModule = (module: any) => {
+    const { parser, rules } = module;
+
+    const convertRules = (rules: any) => {
+      return rules;
+    };
+
+    return {
+      parser,
+      rules: convertRules(rules),
+    };
+  };
+
+  const convertPlugins = (plugins: any) => {
+    return plugins;
+  };
+
+  return {
+    mode,
+    devtool: devtool as DevTool,
+    target: target as Target,
+    resolve: convertResolve(resolve),
+    output: convertOutput(output),
+    watch,
+    experiments: convertExperiments(experiments),
+    optimization: convertOptimization(optimization),
+    module: convertModule(module),
+    plugins: convertPlugins(plugins),
+  };
+}
+
+function rsPackConfig(): RspackOptions {
+  return {
+    mode: 'production' as Mode | undefined,
+    devtool: false,
+    target: ['web', 'es2015'],
+    entry: {
+      polyfills: ['zone.js'],
+      main: ['./src/main.ts'],
+    },
+    resolve: {
+      extensions: ['.ts', '.js'],
+    },
+    output: {
+      uniqueName: 'zackAngularCli',
+      // 'hashFunction': 'xxhash64', // throws error
+      clean: true,
+      // path: "./dist",
+      publicPath: '',
+      filename: '[name].[contenthash:20].js',
+      chunkFilename: '[name].[contenthash:20].js',
+      crossOriginLoading: false,
+      trustedTypes: 'angular#bundler',
+      // 'scriptType': 'module' // throws error
+    },
+    watch: false,
+    // snapshot: {module: {hash: false}},
+    // performance: {hints: false}, // throws error
+    experiments: {
+      // 'backCompat': false, // throws error
+      // 'syncWebAssembly': true, // throws error
+      asyncWebAssembly: true,
+    },
+    optimization: {
+      runtimeChunk: false,
+      minimize: true,
+      splitChunks: {
+        // 'maxAsyncRequests': null, // throws error
+        cacheGroups: {
+          default: {
+            chunks: 'async',
+            minChunks: 2,
+            priority: 10,
+          },
+          common: {
+            name: 'common',
+            chunks: 'async',
+            minChunks: 2,
+            // 'enforce': true, // throws error
+            priority: 5,
+          },
+          // 'vendors': false, // throws error
+          // 'defaultVendors': false // throws error
+        },
+      },
+    },
+    builtins: {
+      html: [
+        {
+          template: './src/index.html',
+        },
+      ],
+    },
+    module: {
+      parser: {
+        javascript: {
+          requireContext: false,
+          // Disable auto URL asset module creation. This doesn't effect `new Worker(new URL(...))`
+          // https://webpack.js.org/guides/asset-modules/#url-assets
+          url: false,
+        },
+      } as any,
+      rules: [
+        // {
+        // 	// ! THIS IS FOR TESTING ANGULAR HMR !
+        // 	include: [path.resolve("./src/main.ts")],
+        // 	use: [
+        // 		{
+        // 			loader: require.resolve(
+        // 				"@angular-devkit/build-angular/src/webpack/plugins/hmr/hmr-loader.js"
+        // 			)
+        // 		}
+        // 	]
+        // },
+        {
+          test: /\.?(svg|html)$/,
+          resourceQuery: /\?ngResource/,
+          type: 'asset/source',
+        },
+        {
+          test: /\.?(scss)$/,
+          resourceQuery: /\?ngResource/,
+          use: [{ loader: 'raw-loader' }, { loader: 'sass-loader' }],
+        },
+        { test: /[/\\]rxjs[/\\]add[/\\].+\.js$/, sideEffects: true },
+        {
+          test: /\.[cm]?[tj]sx?$/,
+          exclude: [
+            /[\\/]node_modules[/\\](?:core-js|@babel|tslib|web-animations-js|web-streams-polyfill|whatwg-url)[/\\]/,
+          ],
+          use: [
+            {
+              loader: require.resolve('@angular-devkit/build-angular/src/babel/webpack-loader.js'),
+              options: {
+                cacheDirectory: path.join(__dirname, '/.angular/cache/15.2.4/babel-webpack'),
+                aot: true,
+                optimize: true,
+                supportedBrowsers: [
+                  'chrome 111',
+                  'chrome 110',
+                  'edge 111',
+                  'edge 110',
+                  'firefox 111',
+                  'firefox 102',
+                  'ios_saf 16.3',
+                  'ios_saf 16.2',
+                  'ios_saf 16.1',
+                  'ios_saf 16.0',
+                  'ios_saf 15.6',
+                  'ios_saf 15.5',
+                  'ios_saf 15.4',
+                  'ios_saf 15.2-15.3',
+                  'ios_saf 15.0-15.1',
+                  'safari 16.3',
+                  'safari 16.2',
+                  'safari 16.1',
+                  'safari 16.0',
+                  'safari 15.6',
+                  'safari 15.5',
+                  'safari 15.4',
+                  'safari 15.2-15.3',
+                  'safari 15.1',
+                  'safari 15',
+                ],
+              },
+            },
+          ],
+        },
+        // {
+        // 	test: /\.[cm]?tsx?$/,
+        // 	use: [{ loader: require.resolve("@ngtools/webpack/src/ivy/index.js") }],
+        // 	exclude: [
+        // 		/[\\/]node_modules[/\\](?:css-loader|mini-css-extract-plugin|webpack-dev-server|webpack)[/\\]/
+        // 	]
+        // }
+      ],
+    },
+    plugins: [
+      // TODO: Add this back after https://github.com/web-infra-dev/rspack/issues/2619 lands
+      // new DedupeModuleResolvePlugin(),
+      new NamedChunksPlugin() as any,
+      new OccurrencesPlugin({
+        aot: true,
+        scriptsOptimization: false,
+      }),
+      new AngularWebpackPlugin({
+        tsconfig: './tsconfig.app.json',
+        emitClassMetadata: false,
+        emitNgModuleScope: false,
+        jitMode: false,
+        fileReplacements: {},
+        substitutions: {},
+        directTemplateLoading: true,
+        compilerOptions: {
+          sourceMap: false,
+          declaration: false,
+          declarationMap: false,
+          preserveSymlinks: false,
+        },
+        inlineStyleFileExtension: 'scss',
+      }),
+    ],
+  };
+}
+
+/*function webpackFactory(options) {
   // asis
-  const {mode, devtool, target} = options;
+  // const {mode, devtool, target} = options;
 
   // not transfered
-  const {profile} = options;
+  // const {profile} = options;
 
   // funciton convert
   const wpResolve = {
@@ -174,9 +478,9 @@ function webpackFactory(options) {
   }
 
   return rspackConfig;
-}
+}*/
 
-function convertModule(module) {
+/*function convertModule(module) {
   const componentStyleLoaders: RuleSetUseItem[] = [
     {
       loader: require.resolve('css-loader'),
@@ -352,7 +656,7 @@ function convertModule(module) {
       // scss .map
       // sass .map
       // less .map
-      styleLanguages.map(({ extensions, use }) => ({
+      styleLanguages.map(({extensions, use}) => ({
         test: new RegExp(`\\.(?:${extensions.join('|')})$`, 'i'),
         rules: [
           // Setup processing rules for global and component styles
@@ -371,15 +675,15 @@ function convertModule(module) {
             ],
           },
           // use from array of rules
-          { use },
+          {use},
         ],
       })),
 
     ],
   }
-}
+}*/
 
-function convertOptimization(optimization) {
+/*function convertOptimization(optimization) {
   const wpOptimization = {
     "minimizer": [
       // {
@@ -532,9 +836,9 @@ function convertOptimization(optimization) {
       }
     }
   }
-}
+}*/
 
-function convertPlugins(plugins) {
+/*function convertPlugins(plugins) {
   const wpPlugins = [
     // NamedChunksPlugin
     new NamedChunksPlugin(),
@@ -547,7 +851,7 @@ function convertPlugins(plugins) {
     }),
 
     // DedupeModuleResolvePlugin
-    new DedupeModuleResolvePlugin({ verbose }),
+    new DedupeModuleResolvePlugin({verbose}),
 
     // ProgressPlugin
     new ProgressPlugin(platform),
@@ -597,16 +901,18 @@ function convertPlugins(plugins) {
       apply: (compiler: any) => {
         compiler.hooks.afterEnvironment.tap('angular-cli', () => {
           // eslint-disable-next-line @typescript-eslint/no-empty-function
-          compiler.watchFileSystem = { watch: () => {} };
+          compiler.watchFileSystem = {
+            watch: () => {
+            }
+          };
         });
       },
     },
 
     // MiniCssExtractPlugin
-    new MiniCssExtractPlugin({ filename: `[name]${hashFormat.extract}.css` }),
+    new MiniCssExtractPlugin({filename: `[name]${hashFormat.extract}.css`}),
 
     // SuppressExtractedTextChunksWebpackPlugin
     new SuppressExtractedTextChunksWebpackPlugin()
   ];
-}
-*/
+}*/
