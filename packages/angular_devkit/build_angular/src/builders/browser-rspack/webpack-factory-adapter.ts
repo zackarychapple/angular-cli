@@ -7,8 +7,6 @@ import { OccurrencesPlugin } from '../../webpack/plugins/occurrences-plugin';
 import { AngularWebpackPlugin } from '@ngtools/webpack';
 import webpack from 'webpack';
 import { Target } from '@rspack/core/dist/config/types';
-import { definitions } from '@rspack/core/dist/config/schema';
-import cacheGroups = definitions.OptimizationSplitChunksOptions.properties_13.cacheGroups;
 
 export function webpackFactory(options: any) {
   return from(createWebpackFactoryFromRspackCLI(options)) as unknown as Observable<typeof webpack>;
@@ -43,6 +41,7 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
     mode,
     devtool,
     target,
+    entry,
     profile,
     resolve,
     output,
@@ -92,17 +91,19 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
   const convertOptimization = (optimization: any) => {
     const { minimize, runtimeChunk, splitChunks } = optimization;
 
-    const common = splitChunks['common'];
-    delete common.enforce;
+    const { cacheGroups } = splitChunks;
+    delete cacheGroups.common.enforce;
 
     return {
-      minimize,
-      runtimeChunk,
+      // fixme: hacks
+      minimize: true,
+      // fixme: hacks
+      runtimeChunk: false,
       splitChunks: {
-        maxAsyncRequests: splitChunks?.maxAsyncRequests,
+        // maxAsyncRequests: splitChunks?.maxAsyncRequests,
         cacheGroups: {
-          default: splitChunks['default'],
-          common,
+          default: cacheGroups['default'],
+          common: cacheGroups.common,
         },
       },
     };
@@ -111,32 +112,79 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
   const convertModule = (module: any) => {
     const { parser, rules } = module;
 
-    const convertRules = (rules: any) => {
-      return rules;
+    const wrapLoaderInUse = (rule: any) => {
+      if (!rule.loader) return rule;
+      rule.use = rule.use || [];
+      rule.use.push({ loader: rule.loader });
+      delete rule.loader;
+
+      return rule;
     };
 
+    const convertRules = (rules: any[]) => {
+      return rules
+        .filter((rule) => !rule.test.test('skip_css_rule.css'))
+        .filter((rule) => !rule.test.test('skip_css_rule.scss'))
+        .filter((rule) => rule.test.toString().indexOf('sass') === -1)
+        .filter((rule) => rule.test.toString().indexOf('less') === -1)
+        .map((rule) => wrapLoaderInUse(rule));
+    };
+
+    // fixme: hacks
+    delete parser.javascript.worker;
+
+    let _rules = convertRules(rules);
+    _rules = [
+      ..._rules,
+      {
+        test: /\.?(scss)$/,
+        resourceQuery: /\?ngResource/,
+        use: [{ loader: 'raw-loader' }, { loader: 'sass-loader' }],
+      },
+    ];
     return {
       parser,
-      rules: convertRules(rules),
+      rules: _rules,
     };
   };
 
   const convertPlugins = (plugins: any) => {
-    return plugins;
+    // fixme: hacks
+    const res = plugins
+      .filter((plugin: any) => plugin.apply.toString().indexOf('compiler.hooks.shutdown') === -1)
+      .filter((plugin: any) => plugin?.constructor?.name !== 'MiniCssExtractPlugin')
+      .filter((plugin: any) => plugin?.constructor?.name !== 'LicenseWebpackPlugin')
+      .filter((plugin: any) => plugin?.constructor?.name !== 'DedupeModuleResolvePlugin')
+      .filter((plugin: any) => plugin?.constructor?.name !== 'AnyComponentStyleBudgetChecker')
+      .filter((plugin: any) => plugin?.constructor?.name !== 'CommonJsUsageWarnPlugin')
+      // fixme: hacks
+      // .filter((plugin) => plugin?.constructor?.name !== 'ProgressPlugin')
+      .filter((plugin: any) => plugin?.constructor?.name !== 'StylesWebpackPlugin');
+    // .filter((plugin) => plugin?.constructor?.name !== 'SuppressExtractedTextChunksWebpackPlugin')
+    return res;
   };
 
-  return {
+  const builtins = { html: [{ template: './src/index.html' }] };
+
+  const res = {
     mode,
     devtool: devtool as DevTool,
     target: target as Target,
+    entry,
     resolve: convertResolve(resolve),
     output: convertOutput(output),
     watch,
     experiments: convertExperiments(experiments),
     optimization: convertOptimization(optimization),
+    builtins,
     module: convertModule(module),
     plugins: convertPlugins(plugins),
+
+    // fixme: hacks
+    cache: true,
   };
+
+  return res as any;
 }
 
 function rsPackConfig(): RspackOptions {
