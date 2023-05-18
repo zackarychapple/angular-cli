@@ -17,6 +17,7 @@ jsconfig.json
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+.idea/aws.xml
 
 # Also ignore code styles because .editorconfig is used instead.
 .idea/codeStyles/

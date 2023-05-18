@@ -37,7 +37,10 @@ export function getEmittedFiles(compilation: Compilation): EmittedFiles[] {
         name: chunk.name,
         file,
         extension: path.extname(file),
-        initial: chunk.isOnlyInitial(),
+        // fixme: hacks
+        initial: (typeof chunk?.isOnlyInitial === 'function'
+          ? chunk.isOnlyInitial()
+          : chunk.isOnlyInitial) as boolean,
       });
     }
   }

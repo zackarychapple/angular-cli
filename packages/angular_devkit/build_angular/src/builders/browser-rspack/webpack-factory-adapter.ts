@@ -7,6 +7,7 @@ import { OccurrencesPlugin } from '../../webpack/plugins/occurrences-plugin';
 import { AngularWebpackPlugin } from '@ngtools/webpack';
 import webpack from 'webpack';
 import { Target } from '@rspack/core/dist/config/types';
+import { ProgressPlugin } from './plugins/progress-plugin';
 
 export function webpackFactory(options: any) {
   return from(createWebpackFactoryFromRspackCLI(options)) as unknown as Observable<typeof webpack>;
@@ -158,9 +159,10 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
       .filter((plugin: any) => plugin?.constructor?.name !== 'AnyComponentStyleBudgetChecker')
       .filter((plugin: any) => plugin?.constructor?.name !== 'CommonJsUsageWarnPlugin')
       // fixme: hacks
-      // .filter((plugin) => plugin?.constructor?.name !== 'ProgressPlugin')
+      .filter((plugin: any) => plugin?.constructor?.name !== 'ProgressPlugin')
       .filter((plugin: any) => plugin?.constructor?.name !== 'StylesWebpackPlugin');
     // .filter((plugin) => plugin?.constructor?.name !== 'SuppressExtractedTextChunksWebpackPlugin')
+
     return res;
   };
 

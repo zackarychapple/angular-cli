@@ -6,17 +6,14 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import { ProgressPlugin as WebpackProgressPlugin } from 'webpack';
-import { Spinner } from '../../utils/spinner';
+import { ProgressPlugin as WebpackProgressPlugin } from './webpack/webpack-progress-plugin';
+import { Spinner } from '../../../utils/spinner';
 
 export class ProgressPlugin extends WebpackProgressPlugin {
-  platform!: 'server' | 'browser';
-
   constructor(platform: 'server' | 'browser') {
     const platformCapitalFirst = platform.replace(/^\w/, (s) => s.toUpperCase());
     const spinner = new Spinner();
-    // fixme: hacks
-    // spinner.start(`Generating ${platform} application bundles (phase: setup)...`);
+    spinner.start(`Generating ${platform} application bundles (phase: setup)...`);
 
     super({
       handler: (percentage: number, message: string) => {
@@ -37,7 +34,5 @@ export class ProgressPlugin extends WebpackProgressPlugin {
         }
       },
     });
-
-    this.platform = platform;
   }
 }
