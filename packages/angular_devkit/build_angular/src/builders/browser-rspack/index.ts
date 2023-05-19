@@ -98,7 +98,7 @@ async function initialize(
 
   const { config, projectRoot, projectSourceRoot, i18n } =
     await generateI18nBrowserWebpackConfigFromContext(adjustedOptions, context, (wco) => [
-      getCommonConfig(wco),
+      getCommonConfig(Object.assign(wco, { isRsPack: true })),
       getStylesConfig(wco),
     ]);
 

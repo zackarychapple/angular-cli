@@ -75,7 +75,9 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
     } = output;
     return {
       uniqueName,
+      // hashFunction,
       clean,
+      path,
       publicPath,
       filename,
       chunkFilename,
@@ -159,14 +161,14 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
       .filter((plugin: any) => plugin?.constructor?.name !== 'AnyComponentStyleBudgetChecker')
       .filter((plugin: any) => plugin?.constructor?.name !== 'CommonJsUsageWarnPlugin')
       // fixme: hacks
-      .filter((plugin: any) => plugin?.constructor?.name !== 'ProgressPlugin')
+      // .filter((plugin: any) => plugin?.constructor?.name !== 'ProgressPlugin')
       .filter((plugin: any) => plugin?.constructor?.name !== 'StylesWebpackPlugin');
     // .filter((plugin) => plugin?.constructor?.name !== 'SuppressExtractedTextChunksWebpackPlugin')
 
     return res;
   };
 
-  const builtins = { html: [{ template: './src/index.html' }] };
+  // const builtins = { html: [{ template: './src/index.html' }] };
 
   const res = {
     mode,
@@ -178,7 +180,7 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
     watch,
     experiments: convertExperiments(experiments),
     optimization: convertOptimization(optimization),
-    builtins,
+    // builtins,
     module: convertModule(module),
     plugins: convertPlugins(plugins),
 

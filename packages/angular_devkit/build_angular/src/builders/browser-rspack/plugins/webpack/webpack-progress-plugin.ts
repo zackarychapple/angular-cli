@@ -7,7 +7,6 @@
 'use strict';
 
 import { Compiler, MultiCompiler, NormalModule } from '@rspack/core';
-import { Compiler as WebpackCompiler, MultiCompiler as WebpackMultiCompiler } from 'webpack';
 // const createSchemaValidation = require("./util/create-schema-validation");
 // const { contextify } = require("./util/identifier");
 
@@ -146,9 +145,9 @@ export class ProgressPlugin {
     const handler =
       this.handler ||
       createDefaultHandler(this.profile, compiler.getInfrastructureLogger('webpack.Progress'));
-    if (compiler instanceof MultiCompiler || compiler instanceof WebpackMultiCompiler) {
+    if (compiler instanceof MultiCompiler) {
       this._applyOnMultiCompiler(compiler, handler);
-    } else if (compiler instanceof Compiler || compiler instanceof WebpackCompiler) {
+    } else if (compiler instanceof Compiler) {
       this._applyOnCompiler(compiler, handler);
     }
   }

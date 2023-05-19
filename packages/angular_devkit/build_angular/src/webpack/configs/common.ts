@@ -31,6 +31,7 @@ import {
 import { DevToolsIgnorePlugin } from '../plugins/devtools-ignore-plugin';
 import { NamedChunksPlugin } from '../plugins/named-chunks-plugin';
 import { OccurrencesPlugin } from '../plugins/occurrences-plugin';
+import { ProgressPlugin as WebpackProgressPlugin } from '../plugins/progress-plugin';
 import { ProgressPlugin } from '../../builders/browser-rspack/plugins/progress-plugin';
 import { TransferSizePlugin } from '../plugins/transfer-size-plugin';
 import { createIvyPlugin } from '../plugins/typescript';
@@ -93,7 +94,11 @@ export async function getCommonConfig(wco: WebpackConfigOptions): Promise<Config
   const hashFormat = getOutputHashFormat(buildOptions.outputHashing);
 
   if (buildOptions.progress) {
-    extraPlugins.push(new ProgressPlugin(platform));
+    extraPlugins.push(
+      (wco as unknown as { isRspack: boolean }).isRspack
+        ? new ProgressPlugin(platform)
+        : new WebpackProgressPlugin(platform),
+    );
   }
 
   const localizePackageInitEntryPoint = '@angular/localize/init';
