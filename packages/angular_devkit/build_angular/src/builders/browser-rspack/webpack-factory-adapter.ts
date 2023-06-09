@@ -44,6 +44,7 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
     target,
     entry,
     profile,
+    context,
     resolve,
     output,
     watch,
@@ -126,8 +127,9 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
 
     const convertRules = (rules: any[]) => {
       return rules
-        .filter((rule) => !rule.test.test('skip_css_rule.css'))
-        .filter((rule) => !rule.test.test('skip_css_rule.scss'))
+        .filter((rule) => !rule.test.test('skip_rule.tsx'))
+        .filter((rule) => !rule.test.test('skip__rule.css'))
+        .filter((rule) => !rule.test.test('skip_rule.scss'))
         .filter((rule) => rule.test.toString().indexOf('sass') === -1)
         .filter((rule) => rule.test.toString().indexOf('less') === -1)
         .map((rule) => wrapLoaderInUse(rule));
@@ -156,8 +158,8 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
     const res = plugins
       .filter((plugin: any) => plugin.apply.toString().indexOf('compiler.hooks.shutdown') === -1)
       .filter((plugin: any) => plugin?.constructor?.name !== 'MiniCssExtractPlugin')
-      .filter((plugin: any) => plugin?.constructor?.name !== 'LicenseWebpackPlugin')
-      .filter((plugin: any) => plugin?.constructor?.name !== 'DedupeModuleResolvePlugin')
+      // .filter((plugin: any) => plugin?.constructor?.name !== 'LicenseWebpackPlugin')
+      // .filter((plugin: any) => plugin?.constructor?.name !== 'DedupeModuleResolvePlugin')
       .filter((plugin: any) => plugin?.constructor?.name !== 'AnyComponentStyleBudgetChecker')
       .filter((plugin: any) => plugin?.constructor?.name !== 'CommonJsUsageWarnPlugin')
       // fixme: hacks
@@ -174,6 +176,7 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
     mode,
     devtool: devtool as DevTool,
     target: target as Target,
+    context,
     entry,
     resolve: convertResolve(resolve),
     output: convertOutput(output),
