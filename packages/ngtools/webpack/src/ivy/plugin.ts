@@ -368,10 +368,11 @@ export class AngularWebpackPlugin {
       for (const webpackModule of modules) {
         const resource = (webpackModule as NormalModule).resource;
         if (resource && filesToRebuild.has(normalizePath(resource))) {
-          modulesToRebuild.push(webpackModule);
+          await rebuild(webpackModule);
+          // modulesToRebuild.push(webpackModule);
         }
       }
-      await Promise.all(modulesToRebuild.map((webpackModule) => rebuild(webpackModule)));
+      // await Promise.all(modulesToRebuild.map((webpackModule) => rebuild(webpackModule)));
     }
 
     this.requiredFilesToEmit.clear();
