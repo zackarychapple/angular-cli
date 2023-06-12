@@ -69,8 +69,9 @@
     "webpack-dev-server": "4.13.3",
     "webpack-merge": "5.8.0",
     "webpack-subresource-integrity": "5.1.0",
-    "@rspack/cli": "^0.1.10",
-    "@rspack/core": "^0.1.10"
+    "@rspack/cli": "^0.2.1",
+    "@rspack/core": "^0.2.1",
+    "@rspack/plugin-minify": "^0.2.1"
   },
   "optionalDependencies": {
     "esbuild": "0.17.18"

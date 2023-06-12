@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { RspackCLI } from '@rspack/cli';
 import { DevTool, Mode, rspack, RspackOptions } from '@rspack/core';
+import { minifyPlugin } from '@rspack/plugin-minify';
 import { from, Observable } from 'rxjs';
 import { NamedChunksPlugin } from '../../webpack/plugins/named-chunks-plugin';
 import { OccurrencesPlugin } from '../../webpack/plugins/occurrences-plugin';
@@ -98,6 +99,11 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
     delete cacheGroups.common.enforce;
 
     return {
+      minimizer: [
+        new minifyPlugin({
+          minifier: 'terser',
+        }),
+      ],
       // fixme: hacks
       minimize: true,
       // fixme: hacks
@@ -143,6 +149,13 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
         test: /\.?(scss)$/,
         resourceQuery: /\?ngResource/,
         use: [{ loader: 'raw-loader' }, { loader: 'sass-loader' }],
+        type: 'css',
+      },
+      {
+        test: /\.?(less)$/,
+        resourceQuery: /\?ngResource/,
+        use: [{ loader: 'raw-loader' }, { loader: 'less-loader' }],
+        type: 'css',
       },
     ];
     return {
@@ -156,15 +169,9 @@ function webpackToRspack(options: webpack.Configuration): RspackOptions {
     const res = plugins
       .filter((plugin: any) => plugin.apply.toString().indexOf('compiler.hooks.shutdown') === -1)
       .filter((plugin: any) => plugin?.constructor?.name !== 'MiniCssExtractPlugin')
-      .filter((plugin: any) => plugin?.constructor?.name !== 'LicenseWebpackPlugin')
-      .filter((plugin: any) => plugin?.constructor?.name !== 'DedupeModuleResolvePlugin')
       .filter((plugin: any) => plugin?.constructor?.name !== 'AnyComponentStyleBudgetChecker')
       .filter((plugin: any) => plugin?.constructor?.name !== 'CommonJsUsageWarnPlugin')
-      // fixme: hacks
-      // .filter((plugin: any) => plugin?.constructor?.name !== 'ProgressPlugin')
       .filter((plugin: any) => plugin?.constructor?.name !== 'StylesWebpackPlugin');
-    // .filter((plugin) => plugin?.constructor?.name !== 'SuppressExtractedTextChunksWebpackPlugin')
-
     return res;
   };
 
